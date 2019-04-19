@@ -16,7 +16,7 @@ def get_version_info(info_file=DSM_VERSION_FILE):
         with open(info_file, 'r') as ifile:
             for line in ifile:
                 (key, val) = line.rstrip("\n").split("=")
-                info_dict[key] = val
+                info_dict[key] = val.strip('\"')
     except FileNotFoundError:
         return None
     return info_dict

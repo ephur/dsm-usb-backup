@@ -5,6 +5,7 @@ import textwrap
 import click
 
 import dsmusbbackup.dsminfo as dsminfo
+import dsmusbbackup.backup as dsmbackup
 
 
 def validate_target(ctx, param, target):
@@ -23,7 +24,7 @@ def validate_target(ctx, param, target):
         click.secho("Got exception while trying to validate target filesystem:\n{}".format(
             textwrap.indent(str(e), '    ')), err=True, fg="red")
         sys.exit(2)
-    return
+    return target
 
 
 def validate_version(ctx, param, skip_check):
@@ -47,28 +48,21 @@ def validate_version(ctx, param, skip_check):
 """
 Options:
 
-ACCEPT ALL VIA ENV_VARS!
 
-source (multiple sources, unique named)
-target (path to output directory)
 patterns to ignore (rsync compatible ignore patterns)
-maximum copies to keep (how many copies of unit duration to keep in target dir)
-unit durations (days, hours, etc.)
-skipversioncheck
 
 """
 @click.command()
-@click.option("-s", "--source", "source", multiple=True, envvar="DSM_USB_BACKUP_SOURCE",
+@click.option("-s", "--source", "source", multiple=True, envvar="DUB_SOURCE",
               type=click.Path(exists=True), required=True,
               help="Source path, can be provided multiple times")
-@click.option("-t", "--target", "target", envvar="DSM_USB_BACKUP_TARGET",
+@click.option("-t", "--target", "target", envvar="DUB_TARGET",
               type=click.Path(exists=True), required=True, callback=validate_target,
               help="Target path (must be on ext4 file system)")
-@click.option("--skip-version-check/--no-skip-version-check", envvar="DSM_USB_BACKUP_SKIP_VERSION_CHECK",
+@click.option("-r", "--retain", default=7, help="number of backup copies to retain", envvar="DUB_RETAIN")
+@click.option("--skip-version-check/--no-skip-version-check", envvar="DUB_SKIP_VERSION_CHECK",
               default=False, help="skip DSM version compatibility check", callback=validate_version)
-def main(args=None, **kwargs):
-    pass
-
-
-if __name__ == "__main__":
-    main()
+def main(source, target, retain, skip_version_check):
+    backup = dsmbackup.Backup(target)
+    for s in source:
+        backup.sync(s)
